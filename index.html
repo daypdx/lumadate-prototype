@@ -5,10 +5,90 @@
     <link rel="icon" type="image/svg+xml" href="/lumadate-prototype/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LumaDate Prototype</title>
+    <style>
+      .itinerary,
+      .adjustment-banner {
+        scroll-margin-top: 18px;
+      }
+
+      .itinerary:focus,
+      .adjustment-banner:focus {
+        outline: 2px solid var(--app-primary, #5b6ee1);
+        outline-offset: 4px;
+      }
+
+      .verification-note {
+        font-size: 0.78rem;
+        opacity: 0.82;
+      }
+
+      @media (width <= 880px) {
+        .app-shell {
+          padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+        }
+
+        .bottom-nav {
+          gap: 3px !important;
+          padding: 4px !important;
+        }
+
+        .bottom-nav button {
+          min-height: 38px !important;
+          font-size: 11.5px !important;
+        }
+      }
+
+      @media (width <= 430px) {
+        .bottom-nav button {
+          min-height: 36px !important;
+          font-size: 11px !important;
+        }
+
+        .welcome-actions .primary,
+        .welcome-actions .secondary {
+          width: 100%;
+        }
+      }
+    </style>
     <script type="module" crossorigin src="/lumadate-prototype/assets/index-D3xU3trT.js"></script>
     <link rel="stylesheet" crossorigin href="/lumadate-prototype/assets/index-Bmdq1gq9.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
+    <script>
+      (() => {
+        const selector = 'button,a,[role="button"]';
+        let lastClicked = null;
+        let lastClickTime = 0;
+        const syntheticClickTime = new WeakMap();
+
+        document.addEventListener(
+          'click',
+          (event) => {
+            lastClicked = event.target.closest(selector);
+            lastClickTime = Date.now();
+          },
+          true
+        );
+
+        function fallbackActivate(event) {
+          const target = event.target && event.target.closest && event.target.closest(selector);
+          if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
+          if (target.dataset.lumaClickFallback === 'off') return;
+          if (syntheticClickTime.has(target) && Date.now() - syntheticClickTime.get(target) < 180) return;
+
+          const armedAt = Date.now();
+          window.setTimeout(() => {
+            if (!document.contains(target)) return;
+            if (lastClicked === target && lastClickTime >= armedAt) return;
+            syntheticClickTime.set(target, Date.now());
+            target.click();
+          }, 90);
+        }
+
+        document.addEventListener('pointerup', fallbackActivate, true);
+        document.addEventListener('touchend', fallbackActivate, true);
+      })();
+    </script>
   </body>
 </html>
